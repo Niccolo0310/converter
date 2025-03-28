@@ -56,7 +56,7 @@ export default function FileConverter() {
         formData.append("targetFormat", targetFormat);
 
         try {
-            const res = await fetch("/api/upload", {
+            const res = await fetch("/api/share", {
                 method: "POST",
                 body: formData,
             });
@@ -65,7 +65,7 @@ export default function FileConverter() {
 
             // Se ho fileUrl e originalUrl, costruisco il link per la GET
             if (data.fileUrl && data.originalUrl) {
-                setDownloadUrl(`/api/upload?file=${data.fileUrl}&orig=${data.originalUrl}`);
+                setDownloadUrl(`/api/share?file=${data.fileUrl}&orig=${data.originalUrl}`);
             }
         } catch (error) {
             setMessage("Error during upload!");
@@ -75,7 +75,7 @@ export default function FileConverter() {
         setLoading(false);
     };
 
-    // Scarica automaticamente il file appena "downloadUrl" è disponibile
+    // Scarica automaticamente il file appena downloadUrl è disponibile
     useEffect(() => {
         if (downloadUrl) {
             const link = document.createElement("a");
