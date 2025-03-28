@@ -3,17 +3,17 @@ import path from "path";
 import { NextResponse } from "next/server";
 import { spawn } from "child_process";
 
-// --------------------------
+// ------------------------------------------------
 // Funzione per sanitizzare il nome del file
-// --------------------------
+// ------------------------------------------------
 const sanitizeFileName = (name) => {
     return name.replace(/[^a-zA-Z0-9.]/g, '_');
 };
 
-// --------------------------
-// Funzione per convertire un file usando LibreOffice
-// targetFormat deve essere "pdf" o "docx"
-// --------------------------
+// ------------------------------------------------
+// Funzione per convertire un file con LibreOffice
+// (Richiede soffice installato su macOS/Linux)
+// ------------------------------------------------
 const convertWithLibreOffice = (inputFile, outputDir, targetFormat) => {
     return new Promise((resolve, reject) => {
         const child = spawn("soffice", [
@@ -43,12 +43,11 @@ const convertWithLibreOffice = (inputFile, outputDir, targetFormat) => {
     });
 };
 
-// --------------------------
-// POST: Carica il file, lo converte e restituisce URL per il download
-// Utilizza la cartella /tmp per Vercel
-// --------------------------
+// ------------------------------------------------
+// POST: Carica e converte il file (PDF, PNG, JPEG, TIFF, DOCX) e salva in /tmp
+// ------------------------------------------------
 export async function POST(req) {
-    // Configura PATH per pdftocairo e LibreOffice (su macOS)
+    // Se stai su macOS in locale
     process.env.PATH = process.env.PATH + ":/opt/homebrew/bin";
     process.env.POPPLER_PATH = "/opt/homebrew/bin";
 
@@ -60,7 +59,7 @@ export async function POST(req) {
         return NextResponse.json({ message: "Nessun file caricato!" }, { status: 400 });
     }
 
-    // Formati supportati: PNG, JPEG, TIFF, PDF, DOCX
+    // Formati supportati
     const validFormats = ['png', 'jpeg', 'tiff', 'pdf', 'docx'];
     if (!targetFormat || !validFormats.includes(targetFormat.toLowerCase())) {
         targetFormat = 'png';
@@ -68,7 +67,7 @@ export async function POST(req) {
         targetFormat = targetFormat.toLowerCase();
     }
 
-    // Usa la cartella /tmp/uploads per i file temporanei su Vercel
+    // Cartelle temporanee su Vercel: /tmp/uploads
     const uploadDir = path.join("/tmp", "uploads");
     const shareDir = path.join(uploadDir, "shared");
 
@@ -79,10 +78,12 @@ export async function POST(req) {
         return NextResponse.json({ message: "Errore creazione directory!" }, { status: 500 });
     }
 
+    // Nome file univoco
     const sanitizedFileName = sanitizeFileName(file.name);
     const uniqueName = `${Date.now()}-${sanitizedFileName}`;
     const originalFilePath = path.join(shareDir, uniqueName);
 
+    // Salva il file caricato
     try {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
@@ -97,6 +98,7 @@ export async function POST(req) {
     let filePath = originalFilePath;
     const inputExt = path.extname(sanitizedFileName).toLowerCase();
     const convertedDir = path.join(uploadDir, "converted");
+
     try {
         await mkdir(convertedDir, { recursive: true });
     } catch (err) {
@@ -106,8 +108,11 @@ export async function POST(req) {
     let finalOutputPath = "";
     const timestamp = Date.now().toString();
 
-    // Caso 1: Conversione in immagine (PNG, JPEG, TIFF)
+    // ----------------------------
+    // CASO 1: Conversione in immagine (png, jpeg, tiff)
+    // ----------------------------
     if (['png', 'jpeg', 'tiff'].includes(targetFormat)) {
+        // Se non è PDF, convertilo in PDF con LibreOffice
         if (inputExt !== ".pdf") {
             try {
                 console.log("Conversione in PDF in corso...");
@@ -118,13 +123,15 @@ export async function POST(req) {
                 return NextResponse.json({ message: "Errore nella conversione in PDF!" }, { status: 500 });
             }
         }
+
+        // Converte PDF -> immagine con pdftocairo
         let flag, extForImage;
         if (targetFormat === 'png') { flag = '-png'; extForImage = 'png'; }
         else if (targetFormat === 'jpeg') { flag = '-jpeg'; extForImage = 'jpg'; }
         else if (targetFormat === 'tiff') { flag = '-tiff'; extForImage = 'tiff'; }
 
         await new Promise((resolve, reject) => {
-            const child = spawn("/opt/homebrew/bin/pdftocairo", [
+            const child = spawn("pdftocairo", [
                 flag,
                 "-scale-to",
                 "1024",
@@ -148,6 +155,7 @@ export async function POST(req) {
                 reject(err);
             });
         });
+
         try {
             const files = await readdir(convertedDir);
             console.log("Files convertiti:", files);
@@ -155,10 +163,11 @@ export async function POST(req) {
             if (matchingFiles.length === 0) {
                 return NextResponse.json({ message: "Errore: nessun file immagine generato!" }, { status: 500 });
             }
+            // Se c'è un solo file
             if (matchingFiles.length === 1) {
                 finalOutputPath = path.join(convertedDir, matchingFiles[0]);
             } else {
-                // Crea un archivio ZIP se ci sono più file
+                // Se ci sono più file (es. PDF multipagina), crea un archivio ZIP
                 const AdmZip = require("adm-zip");
                 const zip = new AdmZip();
                 for (const f of matchingFiles) {
@@ -173,7 +182,9 @@ export async function POST(req) {
             return NextResponse.json({ message: "Errore lettura cartella convertita!" }, { status: 500 });
         }
     }
-    // Caso 2: Conversione in PDF
+        // ----------------------------
+        // CASO 2: Conversione in PDF
+    // ----------------------------
     else if (targetFormat === 'pdf') {
         if (inputExt !== ".pdf") {
             try {
@@ -193,7 +204,9 @@ export async function POST(req) {
             return NextResponse.json({ message: "Errore nella copia del file PDF!" }, { status: 500 });
         }
     }
-    // Caso 3: Conversione in DOCX
+        // ----------------------------
+        // CASO 3: Conversione in DOCX
+    // ----------------------------
     else if (targetFormat === 'docx') {
         if (inputExt === ".pdf") {
             console.error("Conversione da PDF a DOCX non supportata!");
@@ -216,13 +229,13 @@ export async function POST(req) {
         return NextResponse.json({ message: "Errore: nessun file convertito generato!" }, { status: 500 });
     }
 
-    // Costruisci l'URL relativo: rimuovi la parte "/tmp" e usa una stringa che il frontend possa usare
+    // Rimuovi la parte "/tmp" dal percorso
     const relativePath = finalOutputPath.split("/tmp")[1];
     const fileUrl = relativePath.replace(/\\/g, "/");
 
     console.log("File finale generato:", finalOutputPath);
 
-    // Programma una cancellazione automatica dopo 5 minuti, nel caso il file non venga scaricato
+    // Timer 5 minuti se non scaricato
     setTimeout(async () => {
         try {
             await unlink(finalOutputPath);
@@ -236,7 +249,7 @@ export async function POST(req) {
         } catch (err) {
             console.error("Timed deletion error for original file:", err);
         }
-    }, 5 * 60 * 1000); // 5 minuti
+    }, 5 * 60 * 1000);
 
     return NextResponse.json({
         message: "Conversione completata! Scarica il file convertito.",
@@ -245,19 +258,19 @@ export async function POST(req) {
     });
 }
 
-// --------------------------
-// GET: Scarica il file convertito e cancella immediatamente sia il file convertito che l'originale
-// (Questa route viene utilizzata se l'utente scarica il file prima che scada il timer di 5 minuti)
-// --------------------------
+// ------------------------------------------------
+// GET: Scarica il file e cancella tutto
+// ------------------------------------------------
 export async function GET(request) {
     const { searchParams } = new URL(request.url);
-    const fileParam = searchParams.get("file"); // percorso relativo del file convertito o ZIP
-    const origParam = searchParams.get("orig"); // percorso relativo del file originale
+    const fileParam = searchParams.get("file");
+    const origParam = searchParams.get("orig");
 
     if (!fileParam) {
         return NextResponse.json({ error: "File non specificato" }, { status: 400 });
     }
 
+    // Cartelle
     const filePath = path.join("/tmp", "uploads", "converted", fileParam);
     let originalFilePath = null;
     if (origParam) {
@@ -266,9 +279,11 @@ export async function GET(request) {
 
     try {
         const buffer = await readFile(filePath);
-        // Elimina il file convertito subito dopo la lettura
+
+        // Cancella il file convertito
         await unlink(filePath);
-        // Se il file è uno ZIP, elimina anche i file correlati
+
+        // Se è un archivio ZIP, cancella i file correlati
         if (filePath.endsWith(".zip")) {
             const dir = path.dirname(filePath);
             const prefix = path.basename(filePath, ".zip");
@@ -284,7 +299,8 @@ export async function GET(request) {
                 }
             }
         }
-        // Elimina anche il file originale, se presente
+
+        // Cancella il file originale se presente
         if (originalFilePath) {
             try {
                 await unlink(originalFilePath);
