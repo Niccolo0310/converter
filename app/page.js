@@ -1,95 +1,110 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+import Link from "next/link";
 
 export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>app/page.js</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    return (
+        <div className="container">
+            <h1 className="title">Main Menu</h1>
+            <div className="cardRow">
+                <div className="card">
+                    <h2 className="cardTitle">File Converter</h2>
+                    <p className="cardDescription">
+                        Convert documents and images into various formats.
+                    </p>
+                    <Link href="/file-converter" className="btn">
+                        Go
+                    </Link>
+                </div>
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
+                <div className="card">
+                    <h2 className="cardTitle">Audio Converter</h2>
+                    <p className="cardDescription">
+                        Transform audio files into different formats.
+                    </p>
+                    <Link href="/audio-converter" className="btn">
+                        Go
+                    </Link>
+                </div>
+
+                <div className="card">
+                    <h2 className="cardTitle">File Sharing</h2>
+                    <p className="cardDescription">
+                        Easily share files with others.
+                    </p>
+                    <Link href="/file-sharing" className="btn">
+                        Go
+                    </Link>
+                </div>
+            </div>
+
+            <style jsx>{`
+                .container {
+                    background-color: #23272a;
+                    min-height: 100vh;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 20px;
+                    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                    color: #fff;
+                }
+                .title {
+                    font-size: 26px;
+                    margin-bottom: 40px;
+                }
+                .cardRow {
+                    display: flex;
+                    gap: 20px;
+                    flex-wrap: wrap;
+                    justify-content: center;
+                    width: 100%;
+                    max-width: 1200px;
+                }
+                .card {
+                    background-color: #2c2f33;
+                    width: 280px;
+                    padding: 20px;
+                    border-radius: 12px;
+                    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    text-align: center;
+                    transition: background-color 0.2s ease, transform 0.2s ease;
+                }
+                .card:hover {
+                    background-color: #3b3e43;
+                    transform: translateY(-2px);
+                }
+                .cardTitle {
+                    font-size: 18px;
+                    margin-bottom: 8px;
+                }
+                .cardDescription {
+                    font-size: 14px;
+                    margin-bottom: 16px;
+                    color: #b9bbbe;
+                    line-height: 1.4;
+                }
+                .btn {
+                    background-color: #7289da;
+                    color: #fff;
+                    padding: 10px 16px;
+                    border: none;
+                    border-radius: 0; /* Square button */
+                    text-decoration: none;
+                    font-weight: 500;
+                    text-align: center;
+                    transition: background-color 0.2s ease;
+                    width: 100%;
+                }
+                .btn:hover {
+                    background-color: #5a6ebf;
+                }
+            `}</style>
         </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+    );
+
 }
+

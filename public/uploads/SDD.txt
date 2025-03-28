@@ -1,0 +1,137 @@
+alberto.termine@supsi.ch
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░[TITOLO]░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
+
+
+
+
+
+
+
+
+
+
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░[TITOLO]░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
+
+
+
+
+
+
+
+
+
+
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░[Serie 1]░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
+{esercizio 1 ascensore}
+___________________________________________________________________________________________
+Ingressi U (input sistema)
+
+Up1: {0;1} 	(0 non schiaccio nulla, 1 schiaccio per salire)	//tastiere esterne
+Up2: {0;1;2}	(niente;salire;scendere)
+Up3: {0;1}	(niente;scendere)
+Upa: {0;1;2;3} 	(niente; piani)					//tastiera intern
+Us:  {0;1}	(sensore porte -> aperto;chiuso)
+___________________________________________________________________________________________
+Uscite Y (output sistema)
+
+Yam:	{0;1;2;3}	(niente;chiudi porte e sali;chiudi porte e scendi; fermati
+			 e apri porte; ...)
+
+___________________________________________________________________________________________
+Funzioni g: UxX -> Y
+
+<Xpiano; Xporte; Xmovimentoup; Xmovimentodown>	<Up1; Up2; Up3; Upa; Us>
+<1;0;0;0>;<0;0;1;0;0> ------> 1
+
+___________________________________________________________________________________________
+Variabili di stato X
+descrivono lo stato dei componenti del sistema			//stati anomali ?
+un vettore composto da tutti gli stati delle variabili del sistema
+
+Xpiano:		{1;2;3}
+Xporte:		{0;1}	(aperte;chiuse)
+Xmovimentoup:	{0;1}	(fermo;movimento)
+Xmovimentodown:	{0;1}	(fermo;movimento)
+___________________________________________________________________________________________
+
+{esercizio 2 semafori}
+___________________________________________________________________________________________
+Ingressi U (input sistema)
+
+Up1: {0;1} 	(0 non schiaccio , 1 schiaccio il bottone)	//bottone semaforo
+___________________________________________________________________________________________
+Uscite Y (output sistema)
+
+Yam:	{0;1;2}	(cambia a rosso; cambia a giallo; cambia a verde)	//per strada 1
+Yam:	{0;1;2}	(cambia a rosso; cambia a giallo; cambia a verde)	//per strada 2
+___________________________________________________________________________________________
+Funzioni g: UxX -> Y
+
+<Xcolore1; Xcolore2; Xsensore1; Xsensore2>	<Up1; Up2; Up3; Upa; Us>
+<2;0;1;1>;<1> ------> <0;0>
+___________________________________________________________________________________________
+Variabili di stato X
+descrivono lo stato dei componenti del sistema			//stati anomali ?
+un vettore composto da tutti gli stati delle variabili del sistema
+
+Xcolore1:	{0;1;2}	(rosso;giallo;verde)	//stato strada 1
+Xcolore2:	{0;1;2}	(rosso;giallo;verde)	//stato strada 2
+Xsensore1: 	{0;1}	(niente traffico;traffico)	//rilevamento pedoni strada 1
+Xsensore2: 	{0;1}	(niente traffico;traffico)	//rilevamento pedoni strada 2
+___________________________________________________________________________________________
+
+{esercizio 3 atm}
+___________________________________________________________________________________________
+Ingressi U (input sistema)
+
+Uc: {0;1} (0 nessuna carta inserita, 1 carta inserita)
+Up: {0;1} (0 nessun PIN inserito, 1 PIN corretto inserito)
+Uo: {0;1;2} (0 nessuna operazione, 1 prelievo, 2 saldo)
+___________________________________________________________________________________________
+Uscite Y (output sistema)
+
+Yo: {0;1;2} (rifiuta operazione; mostra saldo; estrai denaro)
+___________________________________________________________________________________________
+Funzioni g: UxX -> Y
+
+<Xcarta; Xpin; Xop>	<Uc; Up; Uo>
+<1;1;2>;<1;1;2> ------> <2>
+___________________________________________________________________________________________
+Variabili di stato X
+descrivono lo stato dei componenti del sistema			//stati anomali ?
+un vettore composto da tutti gli stati delle variabili del sistema
+
+Xcarta: {0;1} (nessuna carta; carta inserita)
+Xpin: 	{0;1} (PIN non inserito; PIN corretto inserito)
+Xop: 	{0;1;2}
+___________________________________________________________________________________________
+
+{esercizio 4 robottino}
+___________________________________________________________________________________________
+Ingressi U (input sistema)
+
+Um1: {0;1} (libero, ostacolo)
+Um2: {0;1} (libero, ostacolo)
+___________________________________________________________________________________________
+Uscite Y (output sistema)
+
+Yo: {0;1;2;3} (fermo; avanti; ruota sinistra; ruota destra)
+___________________________________________________________________________________________
+Funzioni g: UxX -> Y
+
+<Xmovimento; Xsterzo; Xop>	<Um1; Um2; Uoperazione>
+<1;0>;<0;1;2> ------> <2>
+___________________________________________________________________________________________
+Variabili di stato X
+descrivono lo stato dei componenti del sistema			//stati anomali ?
+un vettore composto da tutti gli stati delle variabili del sistema
+
+Xmovimento: 	{0;1} (false, true)
+Xsterzo: 	{0;1;2} (nulla, sinistra, destra)
+___________________________________________________________________________________________
+
+
+
