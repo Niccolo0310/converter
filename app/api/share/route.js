@@ -12,7 +12,7 @@ const sanitizeFileName = (name) => {
 
 // ------------------------------------------------
 // Funzione per convertire un file con LibreOffice
-// (Richiede soffice installato su macOS/Linux)
+// (targetFormat = "pdf" o "docx")
 // ------------------------------------------------
 const convertWithLibreOffice = (inputFile, outputDir, targetFormat) => {
     return new Promise((resolve, reject) => {
@@ -44,10 +44,11 @@ const convertWithLibreOffice = (inputFile, outputDir, targetFormat) => {
 };
 
 // ------------------------------------------------
-// POST: Carica e converte il file (PDF, PNG, JPEG, TIFF, DOCX) e salva in /tmp
+// POST: Carica e converte il file, salva tutto in /tmp/uploads
 // ------------------------------------------------
 export async function POST(req) {
-    // Se stai su macOS in locale
+    // Se stai sviluppando in locale su macOS, imposta il PATH per pdftocairo e LibreOffice;
+    // su Vercel, questi binari probabilmente non sono disponibili.
     process.env.PATH = process.env.PATH + ":/opt/homebrew/bin";
     process.env.POPPLER_PATH = "/opt/homebrew/bin";
 
@@ -59,7 +60,7 @@ export async function POST(req) {
         return NextResponse.json({ message: "Nessun file caricato!" }, { status: 400 });
     }
 
-    // Formati supportati
+    // Formati supportati: PNG, JPEG, TIFF, PDF, DOCX
     const validFormats = ['png', 'jpeg', 'tiff', 'pdf', 'docx'];
     if (!targetFormat || !validFormats.includes(targetFormat.toLowerCase())) {
         targetFormat = 'png';
@@ -67,7 +68,7 @@ export async function POST(req) {
         targetFormat = targetFormat.toLowerCase();
     }
 
-    // Cartelle temporanee su Vercel: /tmp/uploads
+    // Imposta la directory di upload su /tmp
     const uploadDir = path.join("/tmp", "uploads");
     const shareDir = path.join(uploadDir, "shared");
 
@@ -83,7 +84,7 @@ export async function POST(req) {
     const uniqueName = `${Date.now()}-${sanitizedFileName}`;
     const originalFilePath = path.join(shareDir, uniqueName);
 
-    // Salva il file caricato
+    // Salva il file originale
     try {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
@@ -98,7 +99,6 @@ export async function POST(req) {
     let filePath = originalFilePath;
     const inputExt = path.extname(sanitizedFileName).toLowerCase();
     const convertedDir = path.join(uploadDir, "converted");
-
     try {
         await mkdir(convertedDir, { recursive: true });
     } catch (err) {
@@ -109,10 +109,10 @@ export async function POST(req) {
     const timestamp = Date.now().toString();
 
     // ----------------------------
-    // CASO 1: Conversione in immagine (png, jpeg, tiff)
+    // CASO 1: Conversione in immagine (PNG, JPEG, TIFF)
     // ----------------------------
     if (['png', 'jpeg', 'tiff'].includes(targetFormat)) {
-        // Se non è PDF, convertilo in PDF con LibreOffice
+        // Se il file non è già PDF, convertilo in PDF
         if (inputExt !== ".pdf") {
             try {
                 console.log("Conversione in PDF in corso...");
@@ -123,8 +123,7 @@ export async function POST(req) {
                 return NextResponse.json({ message: "Errore nella conversione in PDF!" }, { status: 500 });
             }
         }
-
-        // Converte PDF -> immagine con pdftocairo
+        // Converte il PDF in immagine con pdftocairo
         let flag, extForImage;
         if (targetFormat === 'png') { flag = '-png'; extForImage = 'png'; }
         else if (targetFormat === 'jpeg') { flag = '-jpeg'; extForImage = 'jpg'; }
@@ -146,12 +145,12 @@ export async function POST(req) {
                 if (code === 0) {
                     resolve();
                 } else {
-                    console.error("Errore conversione PDF->immagine:", errorData);
-                    reject(new Error("Errore conversione PDF->immagine"));
+                    console.error("Errore durante la conversione PDF->immagine:", errorData);
+                    reject(new Error("Errore durante la conversione PDF->immagine"));
                 }
             });
             child.on("error", (err) => {
-                console.error("Errore spawn pdftocairo:", err);
+                console.error("Errore durante la conversione (spawn):", err);
                 reject(err);
             });
         });
@@ -163,11 +162,10 @@ export async function POST(req) {
             if (matchingFiles.length === 0) {
                 return NextResponse.json({ message: "Errore: nessun file immagine generato!" }, { status: 500 });
             }
-            // Se c'è un solo file
             if (matchingFiles.length === 1) {
                 finalOutputPath = path.join(convertedDir, matchingFiles[0]);
             } else {
-                // Se ci sono più file (es. PDF multipagina), crea un archivio ZIP
+                // Se sono presenti più file (PDF multipagina), crea un archivio ZIP
                 const AdmZip = require("adm-zip");
                 const zip = new AdmZip();
                 for (const f of matchingFiles) {
@@ -192,7 +190,7 @@ export async function POST(req) {
                 filePath = await convertWithLibreOffice(filePath, uploadDir, "pdf");
                 console.log("PDF generato:", filePath);
             } catch (error) {
-                console.error("Errore conversione in PDF:", error);
+                console.error("Errore nella conversione in PDF:", error);
                 return NextResponse.json({ message: "Errore nella conversione in PDF!" }, { status: 500 });
             }
         }
@@ -218,7 +216,7 @@ export async function POST(req) {
                 filePath = await convertWithLibreOffice(filePath, uploadDir, "docx");
                 console.log("DOCX generato:", filePath);
             } catch (error) {
-                console.error("Errore conversione in DOCX:", error);
+                console.error("Errore nella conversione in DOCX:", error);
                 return NextResponse.json({ message: "Errore nella conversione in DOCX!" }, { status: 500 });
             }
         }
@@ -229,13 +227,13 @@ export async function POST(req) {
         return NextResponse.json({ message: "Errore: nessun file convertito generato!" }, { status: 500 });
     }
 
-    // Rimuovi la parte "/tmp" dal percorso
+    // Costruisci l'URL relativo (rimuovi "/tmp" dal percorso)
     const relativePath = finalOutputPath.split("/tmp")[1];
     const fileUrl = relativePath.replace(/\\/g, "/");
 
     console.log("File finale generato:", finalOutputPath);
 
-    // Timer 5 minuti se non scaricato
+    // Programma la cancellazione automatica dopo 5 minuti se il file non viene scaricato
     setTimeout(async () => {
         try {
             await unlink(finalOutputPath);
@@ -249,7 +247,7 @@ export async function POST(req) {
         } catch (err) {
             console.error("Timed deletion error for original file:", err);
         }
-    }, 5 * 60 * 1000);
+    }, 5 * 60 * 1000); // 5 minuti
 
     return NextResponse.json({
         message: "Conversione completata! Scarica il file convertito.",
@@ -259,7 +257,7 @@ export async function POST(req) {
 }
 
 // ------------------------------------------------
-// GET: Scarica il file e cancella tutto
+// GET: Scarica il file e cancella immediatamente tutto
 // ------------------------------------------------
 export async function GET(request) {
     const { searchParams } = new URL(request.url);
@@ -270,7 +268,6 @@ export async function GET(request) {
         return NextResponse.json({ error: "File non specificato" }, { status: 400 });
     }
 
-    // Cartelle
     const filePath = path.join("/tmp", "uploads", "converted", fileParam);
     let originalFilePath = null;
     if (origParam) {
@@ -279,11 +276,10 @@ export async function GET(request) {
 
     try {
         const buffer = await readFile(filePath);
-
-        // Cancella il file convertito
+        // Elimina il file convertito
         await unlink(filePath);
 
-        // Se è un archivio ZIP, cancella i file correlati
+        // Se il file è uno ZIP, elimina anche i file correlati
         if (filePath.endsWith(".zip")) {
             const dir = path.dirname(filePath);
             const prefix = path.basename(filePath, ".zip");
@@ -300,7 +296,7 @@ export async function GET(request) {
             }
         }
 
-        // Cancella il file originale se presente
+        // Elimina anche il file originale, se presente
         if (originalFilePath) {
             try {
                 await unlink(originalFilePath);
