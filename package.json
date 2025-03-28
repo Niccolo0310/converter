@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "adm-zip": "^0.5.16",
     "next": "15.2.4",
     "pdf-poppler": "^0.2.1",
     "react": "^19.0.0",

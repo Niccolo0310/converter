@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function ProgressBar({ loading }) {
     return (
@@ -7,21 +7,17 @@ function ProgressBar({ loading }) {
             <div style={progressContainerStyle}>
                 <div className="progress-bar"></div>
                 <style jsx>{`
-          @keyframes progressAnimation {
-            0% {
-              transform: translateX(-100%);
-            }
-            100% {
-              transform: translateX(100%);
-            }
-          }
-          .progress-bar {
-            width: 50%;
-            height: 8px;
-            background-color: #7289da;
-            animation: progressAnimation 2s linear infinite;
-          }
-        `}</style>
+                    @keyframes progressAnimation {
+                        0% { transform: translateX(-100%); }
+                        100% { transform: translateX(100%); }
+                    }
+                    .progress-bar {
+                        width: 50%;
+                        height: 8px;
+                        background-color: #7289da;
+                        animation: progressAnimation 2s linear infinite;
+                    }
+                `}</style>
             </div>
         )
     );
@@ -52,23 +48,45 @@ export default function FileConverter() {
     };
 
     const handleUpload = async () => {
-        if (!file) return alert("Seleziona un file!");
+        if (!file) return alert("Select a file!");
         setLoading(true);
+
         const formData = new FormData();
         formData.append("file", file);
         formData.append("targetFormat", targetFormat);
 
-        const response = await fetch("/api/upload", {
-            method: "POST",
-            body: formData,
-        });
-        const data = await response.json();
-        setMessage(data.message);
-        if (data.fileUrl) {
-            setDownloadUrl(data.fileUrl);
+        try {
+            const res = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+            });
+            const data = await res.json();
+            setMessage(data.message);
+
+            // Se ho fileUrl e originalUrl, costruisco il link per la GET
+            if (data.fileUrl && data.originalUrl) {
+                setDownloadUrl(`/api/upload?file=${data.fileUrl}&orig=${data.originalUrl}`);
+            }
+        } catch (error) {
+            setMessage("Error during upload!");
+            console.error(error);
         }
+
         setLoading(false);
     };
+
+    // Scarica automaticamente il file appena "downloadUrl" è disponibile
+    useEffect(() => {
+        if (downloadUrl) {
+            const link = document.createElement("a");
+            link.href = downloadUrl;
+            link.setAttribute("download", "");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setDownloadUrl("");
+        }
+    }, [downloadUrl]);
 
     const containerStyle = {
         backgroundColor: "#36393f",
@@ -127,39 +145,26 @@ export default function FileConverter() {
         fontSize: "16px",
     };
 
-    const linkStyle = {
-        display: "inline-block",
-        marginTop: "15px",
-        color: "#7289da",
-        textDecoration: "none",
-        fontWeight: "bold",
-    };
-
     return (
         <div style={containerStyle}>
             <div style={cardStyle}>
-                <h1 style={headingStyle}>Convertitore File</h1>
+                <h1 style={headingStyle}>File Converter</h1>
                 <input type="file" onChange={handleFileChange} style={inputStyle} />
                 <div style={{ marginBottom: "15px" }}>
-                    <label htmlFor="format">Formato di conversione:</label>
+                    <label htmlFor="format">Conversion Format:</label>
                     <select id="format" value={targetFormat} onChange={handleFormatChange} style={selectStyle}>
-                        <option value="png">PNG (immagine)</option>
-                        <option value="jpeg">JPEG (immagine)</option>
-                        <option value="tiff">TIFF (immagine)</option>
+                        <option value="png">PNG (Image)</option>
+                        <option value="jpeg">JPEG (Image)</option>
+                        <option value="tiff">TIFF (Image)</option>
                         <option value="pdf">PDF</option>
                         <option value="docx">DOCX</option>
                     </select>
                 </div>
                 <button onClick={handleUpload} style={buttonStyle}>
-                    Carica e Converti File
+                    Upload & Convert
                 </button>
                 <ProgressBar loading={loading} />
                 {message && <p style={{ marginTop: "15px" }}>{message}</p>}
-                {downloadUrl && (
-                    <a href={downloadUrl} download style={linkStyle}>
-                        Scarica il file convertito
-                    </a>
-                )}
             </div>
         </div>
     );
