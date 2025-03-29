@@ -44,7 +44,7 @@ export async function POST(req) {
 
     console.log("File saved:", filePath);
 
-    // Costruisci l'URL di download (la GET verrà chiamata con ?file=uniqueName)
+    // Costruisci l'URL di download: la GET verrà chiamata con ?file=uniqueName
     const fileUrl = `/api/share?file=${uniqueName}`;
 
     return NextResponse.json({
