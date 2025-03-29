@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+// Questo endpoint usa Cloudmersive per convertire PDF → PNG/JPEG
+// Se targetFormat = "pdf", restituisce il file PDF così com'è.
+
 export async function POST(req) {
     try {
         // Ottieni i dati dal form
@@ -11,20 +14,20 @@ export async function POST(req) {
             return NextResponse.json({ message: "No file uploaded" }, { status: 400 });
         }
 
-        // Converti il file in Buffer
+        // Leggi il file come Buffer
         const buffer = Buffer.from(await file.arrayBuffer());
 
-        // Se il target è PDF, restituiamo il file così com’è
+        // Se l'utente vuole PDF, restituiamo direttamente il file
         if (targetFormat === "pdf") {
             return new NextResponse(buffer, {
                 headers: {
                     "Content-Type": "application/pdf",
-                    "Content-Disposition": 'attachment; filename="converted.pdf"'
-                }
+                    "Content-Disposition": 'attachment; filename="converted.pdf"',
+                },
             });
         }
 
-        // Scegli l'endpoint Cloudmersive in base al target (supporta solo PNG o JPEG)
+        // Al momento supportiamo solo PNG o JPEG con Cloudmersive
         let endpoint = "";
         if (targetFormat === "png") {
             endpoint = "https://api.cloudmersive.com/convert/pdf/to/png";
@@ -34,20 +37,20 @@ export async function POST(req) {
             return NextResponse.json({ message: "Target format not supported" }, { status: 400 });
         }
 
-        // Ottieni la Cloudmersive API Key dalle variabili d'ambiente
+        // Recupera la Cloudmersive API Key dalle variabili d'ambiente
         const apiKey = process.env.CLOUDMERSIVE_API_KEY;
         if (!apiKey) {
             return NextResponse.json({ message: "API key not configured" }, { status: 500 });
         }
 
-        // Effettua la richiesta all'API Cloudmersive
+        // Effettua la richiesta all'API di Cloudmersive
         const response = await fetch(endpoint, {
             method: "POST",
             headers: {
                 "Content-Type": "application/octet-stream",
-                "Apikey": apiKey
+                "Apikey": apiKey,
             },
-            body: buffer
+            body: buffer,
         });
 
         if (!response.ok) {
@@ -59,11 +62,12 @@ export async function POST(req) {
         const convertedBuffer = await response.arrayBuffer();
         const convertedFile = Buffer.from(convertedBuffer);
 
+        // Restituisce il file convertito come download
         return new NextResponse(convertedFile, {
             headers: {
                 "Content-Type": "application/octet-stream",
-                "Content-Disposition": `attachment; filename="converted.${targetFormat}"`
-            }
+                "Content-Disposition": `attachment; filename="converted.${targetFormat}"`,
+            },
         });
     } catch (error) {
         console.error("Error in /api/convert route:", error);
