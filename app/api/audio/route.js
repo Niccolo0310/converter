@@ -3,7 +3,7 @@ import path from "path";
 import { NextResponse } from "next/server";
 import { spawn } from "child_process";
 
-// Funzione per sanitizzare il nome del file (rimuove caratteri non alfanumerici, tranne il punto)
+// Funzione per sanitizzare il nome del file
 const sanitizeFileName = (name) => {
     return name.replace(/[^a-zA-Z0-9.]/g, '_');
 };
@@ -17,7 +17,7 @@ export async function POST(req) {
         return NextResponse.json({ message: "Nessun file caricato!" }, { status: 400 });
     }
 
-    // Formati di output audio supportati
+    // Formati audio supportati
     const validFormats = ["mp3", "wav", "aac", "flac", "ogg"];
     if (!targetFormat || !validFormats.includes(targetFormat.toLowerCase())) {
         targetFormat = "mp3";
@@ -25,12 +25,12 @@ export async function POST(req) {
         targetFormat = targetFormat.toLowerCase();
     }
 
-    // Salva il file nella cartella public/uploads/audio
+    // Converti il file in Buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const uploadDir = path.join(process.cwd(), "public/uploads/audio");
 
-    // Crea la directory se non esiste
+    // Imposta la directory di upload su /tmp/uploads/audio
+    const uploadDir = path.join("/tmp", "uploads", "audio");
     await mkdir(uploadDir, { recursive: true });
 
     const sanitizedFileName = sanitizeFileName(file.name);
@@ -43,7 +43,7 @@ export async function POST(req) {
         return NextResponse.json({ message: "Errore nel salvataggio del file audio!" }, { status: 500 });
     }
 
-    // Imposta la cartella per l'output e crea se necessario
+    // Imposta la directory per l'output
     const outputDir = path.join(uploadDir, "converted");
     await mkdir(outputDir, { recursive: true });
     const outputFileName = `${Date.now()}-converted.${targetFormat}`;
@@ -58,7 +58,8 @@ export async function POST(req) {
         });
         child.on("close", (code) => {
             if (code === 0) {
-                const relativePath = outputFilePath.split(path.join(process.cwd(), "public"))[1];
+                // Rimuovi "/tmp" dal percorso per creare un URL relativo
+                const relativePath = outputFilePath.split("/tmp")[1];
                 const fileUrl = relativePath.replace(/\\/g, "/");
                 resolve(NextResponse.json({
                     message: "Conversione audio completata! Scarica il file convertito.",
