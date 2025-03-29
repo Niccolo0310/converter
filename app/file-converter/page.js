@@ -1,150 +1,146 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
-export default function MainMenu() {
-    const router = useRouter();
-    const [roomCode, setRoomCode] = useState("");
-
-    // Naviga alla pagina file-sharing con eventuale room code
-    const goToFileSharing = () => {
-        if (roomCode.trim()) {
-            router.push(`/file-sharing?room=${roomCode}`);
-        } else {
-            router.push("/file-sharing");
-        }
-    };
-
+function ProgressBar({ loading }) {
     return (
-        <div style={containerStyle}>
-            <h1 style={headingStyle}>Main Menu</h1>
-            <div style={cardContainerStyle}>
-                {/* Card: File Converter */}
-                <div style={cardStyle}>
-                    <h2 style={cardTitleStyle}>File Converter</h2>
-                    <p style={cardDescriptionStyle}>
-                        Convert documents and images into various formats.
-                    </p>
-                    <button style={buttonStyle} onClick={() => router.push("/file-converter")}>
-                        Go
-                    </button>
-                </div>
-
-                {/* Card: Audio Converter */}
-                <div style={cardStyle}>
-                    <h2 style={cardTitleStyle}>Audio Converter</h2>
-                    <p style={cardDescriptionStyle}>
-                        Transform audio files into different formats.
-                    </p>
-                    <button style={buttonStyle} onClick={() => router.push("/audio-converter")}>
-                        Go
-                    </button>
-                </div>
-
-                {/* Card: File Sharing */}
-                <div style={cardStyle}>
-                    <h2 style={cardTitleStyle}>File Sharing</h2>
-                    <p style={cardDescriptionStyle}>
-                        Easily share files with others.
-                    </p>
-                    <div style={{ marginBottom: "10px", textAlign: "left" }}>
-                        <label style={labelStyle}>Room Code:</label>
-                        <input
-                            type="text"
-                            placeholder="e.g., 4378"
-                            value={roomCode}
-                            onChange={(e) => setRoomCode(e.target.value)}
-                            style={inputStyle}
-                        />
-                    </div>
-                    <button style={buttonStyle} onClick={goToFileSharing}>
-                        Go
-                    </button>
-                </div>
+        loading && (
+            <div style={progressContainerStyle}>
+                <div className="progress-bar"></div>
+                <style jsx>{`
+          @keyframes progressAnimation {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+          }
+          .progress-bar {
+            width: 50%;
+            height: 8px;
+            background-color: #7289da;
+            animation: progressAnimation 2s linear infinite;
+          }
+        `}</style>
             </div>
-            <style jsx>{`
-        /* Puoi aggiungere qui ulteriori stili globali se necessario */
-      `}</style>
-        </div>
+        )
     );
 }
 
-const containerStyle = {
-    backgroundColor: "#23272a",
-    minHeight: "100vh",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "20px",
-    fontFamily: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
-    color: "#fff",
-};
-
-const headingStyle = {
-    fontSize: "26px",
-    marginBottom: "40px",
-};
-
-const cardContainerStyle = {
-    display: "flex",
-    gap: "20px",
-    flexWrap: "wrap",
-    justifyContent: "center",
+const progressContainerStyle = {
     width: "100%",
-    maxWidth: "1200px",
-};
-
-const cardStyle = {
-    backgroundColor: "#2c2f33",
-    width: "280px",
-    padding: "20px",
-    borderRadius: "12px",
-    boxShadow: "0 2px 10px rgba(0, 0, 0, 0.3)",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    textAlign: "center",
-    transition: "background-color 0.2s ease, transform 0.2s ease",
-};
-
-const cardTitleStyle = {
-    fontSize: "18px",
-    marginBottom: "8px",
-};
-
-const cardDescriptionStyle = {
-    fontSize: "14px",
-    marginBottom: "16px",
-    color: "#b9bbbe",
-    lineHeight: "1.4",
-};
-
-const buttonStyle = {
-    backgroundColor: "#7289da",
-    color: "#fff",
-    padding: "10px 16px",
-    border: "none",
-    borderRadius: "0", // Pulsante squadrato
-    textDecoration: "none",
-    fontWeight: "500",
-    textAlign: "center",
-    transition: "background-color 0.2s ease",
-    width: "100%",
-    cursor: "pointer",
-};
-
-const labelStyle = {
-    display: "block",
-    marginBottom: "5px",
-    fontWeight: "bold",
-};
-
-const inputStyle = {
-    width: "100%",
-    padding: "8px",
-    borderRadius: "4px",
-    border: "none",
     backgroundColor: "#202225",
-    color: "#dcddde",
+    borderRadius: "4px",
+    overflow: "hidden",
+    marginTop: "15px",
+    height: "8px",
 };
+
+export default function FileConverter() {
+    const [file, setFile] = useState(null);
+    const [targetFormat, setTargetFormat] = useState("png");
+    const [message, setMessage] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const handleFileChange = (e) => setFile(e.target.files[0]);
+    const handleFormatChange = (e) => setTargetFormat(e.target.value);
+
+    const handleUpload = async () => {
+        if (!file) {
+            alert("Select a file to convert!");
+            return;
+        }
+        setLoading(true);
+        setMessage("");
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("targetFormat", targetFormat);
+
+        try {
+            const res = await fetch("/api/convert", {
+                method: "POST",
+                body: formData,
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                setMessage("Conversion error: " + err.message);
+            } else {
+                // Ottieni il file convertito come blob e avvia il download
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `converted.${targetFormat}`;
+                a.click();
+                URL.revokeObjectURL(url);
+                setMessage("Conversion complete!");
+            }
+        } catch (error) {
+            console.error(error);
+            setMessage("Error during upload!");
+        }
+        setLoading(false);
+    };
+
+    return (
+        <div style={{
+            backgroundColor: "#36393f",
+            color: "#dcddde",
+            minHeight: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "Segoe UI, Tahoma, Geneva, Verdana, sans-serif",
+            padding: "20px"
+        }}>
+            <div style={{
+                backgroundColor: "#2f3136",
+                borderRadius: "8px",
+                padding: "30px",
+                boxShadow: "0 2px 10px rgba(0, 0, 0, 0.3)",
+                width: "100%",
+                maxWidth: "500px",
+                textAlign: "center"
+            }}>
+                <h1 style={{ marginBottom: "20px", color: "#ffffff" }}>File Converter</h1>
+                <input type="file" onChange={handleFileChange} style={{
+                    width: "100%",
+                    padding: "8px",
+                    marginBottom: "15px",
+                    borderRadius: "4px",
+                    border: "none",
+                    backgroundColor: "#202225",
+                    color: "#dcddde"
+                }} />
+                <div style={{ marginBottom: "15px" }}>
+                    <label htmlFor="format">Conversion Format:</label>
+                    <select id="format" value={targetFormat} onChange={handleFormatChange} style={{
+                        width: "100%",
+                        padding: "8px",
+                        borderRadius: "4px",
+                        border: "none",
+                        backgroundColor: "#202225",
+                        color: "#dcddde",
+                        marginTop: "5px"
+                    }}>
+                        <option value="png">PNG (Image)</option>
+                        <option value="jpeg">JPEG (Image)</option>
+                        <option value="pdf">PDF</option>
+                        <option value="docx">DOCX</option>
+                    </select>
+                </div>
+                <button onClick={handleUpload} style={{
+                    backgroundColor: "#7289da",
+                    color: "#ffffff",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "10px 20px",
+                    cursor: "pointer",
+                    marginTop: "15px",
+                    fontSize: "16px"
+                }}>
+                    Upload & Convert
+                </button>
+                <ProgressBar loading={loading} />
+                {message && <p style={{ marginTop: "15px" }}>{message}</p>}
+            </div>
+        </div>
+    );
+}
