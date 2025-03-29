@@ -38,8 +38,7 @@ export async function POST(req) {
             docx: {
                 pdf: "https://api.cloudmersive.com/convert/docx/to/pdf",
             },
-            // Puoi aggiungere ulteriori conversioni, ad esempio:
-            // png: { pdf: "https://api.cloudmersive.com/convert/png/to/pdf" } se supportato, ecc.
+            // Aggiungi ulteriori conversioni se necessario
         };
 
         if (!conversionMap[inputExt] || !conversionMap[inputExt][targetFormat]) {
