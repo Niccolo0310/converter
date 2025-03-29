@@ -62,7 +62,6 @@ export default function FileConverter() {
                 const err = await res.json();
                 setMessage("Conversion error: " + err.message);
             } else {
-                // Ottieni il file convertito come blob e avvia il download
                 const blob = await res.blob();
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
@@ -111,15 +110,20 @@ export default function FileConverter() {
                 }} />
                 <div style={{ marginBottom: "15px" }}>
                     <label htmlFor="format">Conversion Format:</label>
-                    <select id="format" value={targetFormat} onChange={handleFormatChange} style={{
-                        width: "100%",
-                        padding: "8px",
-                        borderRadius: "4px",
-                        border: "none",
-                        backgroundColor: "#202225",
-                        color: "#dcddde",
-                        marginTop: "5px"
-                    }}>
+                    <select
+                        id="format"
+                        value={targetFormat}
+                        onChange={handleFormatChange}
+                        style={{
+                            width: "100%",
+                            padding: "8px",
+                            borderRadius: "4px",
+                            border: "none",
+                            backgroundColor: "#202225",
+                            color: "#dcddde",
+                            marginTop: "5px"
+                        }}
+                    >
                         <option value="png">PNG (Image)</option>
                         <option value="jpeg">JPEG (Image)</option>
                         <option value="pdf">PDF</option>
