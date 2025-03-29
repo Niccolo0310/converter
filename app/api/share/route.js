@@ -1,82 +1,145 @@
-import { writeFile, mkdir, readFile, unlink } from "fs/promises";
-import path from "path";
-import { NextResponse } from "next/server";
+"use client";
+import { useState } from "react";
 
-// Funzione per sanitizzare il nome del file (rimuove caratteri non alfanumerici, tranne il punto)
-const sanitizeFileName = (name) => {
-    return name.replace(/[^a-zA-Z0-9.]/g, '_');
-};
-
-// POST: Carica il file e lo salva in /tmp/uploads/shared
-export async function POST(req) {
-    const formData = await req.formData();
-    const file = formData.get("file");
-
-    if (!file) {
-        return NextResponse.json({ message: "No file uploaded" }, { status: 400 });
-    }
-
-    // Converte il file in Buffer
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Imposta la directory di upload su /tmp/uploads/shared (scrivibile su Vercel)
-    const uploadDir = path.join("/tmp", "uploads", "shared");
-
-    try {
-        await mkdir(uploadDir, { recursive: true });
-    } catch (err) {
-        console.error("Error creating share directory:", err);
-        return NextResponse.json({ message: "Error creating directory" }, { status: 500 });
-    }
-
-    // Crea un nome file univoco
-    const sanitizedFileName = sanitizeFileName(file.name);
-    const uniqueName = `${Date.now()}-${sanitizedFileName}`;
-    const filePath = path.join(uploadDir, uniqueName);
-
-    try {
-        await writeFile(filePath, buffer);
-    } catch (error) {
-        console.error("Error saving file:", error);
-        return NextResponse.json({ message: "Error saving file" }, { status: 500 });
-    }
-
-    console.log("File saved:", filePath);
-
-    // Costruisci l'URL di download: la GET verrà chiamata con ?file=uniqueName
-    const fileUrl = `/api/share?file=${uniqueName}`;
-
-    return NextResponse.json({
-        message: "File shared successfully!",
-        fileUrl: fileUrl,
-    });
+function ProgressBar({ loading }) {
+    return (
+        loading && (
+            <div style={progressContainerStyle}>
+                <div className="progress-bar"></div>
+                <style jsx>{`
+          @keyframes progressAnimation {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+          }
+          .progress-bar {
+            width: 50%;
+            height: 8px;
+            background-color: #7289da;
+            animation: progressAnimation 2s linear infinite;
+          }
+        `}</style>
+            </div>
+        )
+    );
 }
 
-// GET: Scarica il file e lo cancella immediatamente dopo
-export async function GET(request) {
-    const { searchParams } = new URL(request.url);
-    const fileParam = searchParams.get("file");
+const progressContainerStyle = {
+    width: "100%",
+    backgroundColor: "#202225",
+    borderRadius: "4px",
+    overflow: "hidden",
+    marginTop: "15px",
+    height: "8px",
+};
 
-    if (!fileParam) {
-        return NextResponse.json({ error: "File not specified" }, { status: 400 });
-    }
+export default function FileSharing() {
+    const [file, setFile] = useState(null);
+    const [message, setMessage] = useState("");
+    const [shareUrl, setShareUrl] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    const filePath = path.join("/tmp", "uploads", "shared", fileParam);
+    const handleFileChange = (e) => {
+        setFile(e.target.files[0]);
+    };
 
-    try {
-        const buffer = await readFile(filePath);
-        // Elimina il file subito dopo averlo letto
-        await unlink(filePath);
-        return new NextResponse(buffer, {
-            status: 200,
-            headers: {
-                "Content-Type": "application/octet-stream",
-                "Content-Disposition": `attachment; filename="${fileParam}"`
-            },
-        });
-    } catch (error) {
-        console.error("Error during file download:", error);
-        return NextResponse.json({ error: "File not found or already deleted" }, { status: 404 });
-    }
+    const handleUpload = async () => {
+        if (!file) return alert("Seleziona un file da condividere!");
+        setLoading(true);
+        setMessage("");
+        setShareUrl("");
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const res = await fetch("/api/share", {
+                method: "POST",
+                body: formData,
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                setMessage("Errore: " + (err.message || err.error));
+            } else {
+                const data = await res.json();
+                setMessage(data.message);
+                if (data.fileUrl) {
+                    setShareUrl(data.fileUrl);
+                }
+            }
+        } catch (error) {
+            console.error(error);
+            setMessage("Errore durante il caricamento!");
+        }
+        setLoading(false);
+    };
+
+    return (
+        <div style={{
+            backgroundColor: "#36393f",
+            color: "#dcddde",
+            minHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "Segoe UI, Tahoma, Geneva, Verdana, sans-serif",
+            padding: "20px"
+        }}>
+            <div style={{
+                backgroundColor: "#2f3136",
+                borderRadius: "8px",
+                padding: "30px",
+                boxShadow: "0 2px 10px rgba(0, 0, 0, 0.3)",
+                width: "100%",
+                maxWidth: "500px",
+                textAlign: "center"
+            }}>
+                <h1 style={{ color: "#ffffff", marginBottom: "20px" }}>Condivisione File</h1>
+                <p>Carica un file per ottenere un link condivisibile:</p>
+                <input
+                    type="file"
+                    onChange={handleFileChange}
+                    style={{
+                        width: "100%",
+                        padding: "8px",
+                        marginBottom: "15px",
+                        borderRadius: "4px",
+                        border: "none",
+                        backgroundColor: "#202225",
+                        color: "#dcddde"
+                    }}
+                />
+                <button
+                    onClick={handleUpload}
+                    style={{
+                        backgroundColor: "#7289da",
+                        color: "#ffffff",
+                        border: "none",
+                        borderRadius: "4px",
+                        padding: "10px 20px",
+                        cursor: "pointer",
+                        marginTop: "15px",
+                        fontSize: "16px"
+                    }}
+                >
+                    Carica e Condividi
+                </button>
+                <ProgressBar loading={loading} />
+                {message && <p style={{ marginTop: "15px" }}>{message}</p>}
+                {shareUrl && (
+                    <div style={{ marginTop: "15px" }}>
+                        <p>Link per condividere il file:</p>
+                        <a
+                            href={shareUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: "#7289da", textDecoration: "none", fontWeight: "bold" }}
+                        >
+                            {shareUrl}
+                        </a>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 }
