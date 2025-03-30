@@ -132,7 +132,7 @@ export default function FileSharing() {
                         }}
                     />
                 </div>
-                <p>Upload a file to get a shareable link:</p>
+                <p>Upload a f1le to get a shareable link:</p>
                 <input
                     type="file"
                     onChange={handleFileChange}
