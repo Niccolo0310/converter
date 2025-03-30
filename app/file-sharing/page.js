@@ -44,7 +44,7 @@ export default function FileSharing() {
 
     const uploadFile = async () => {
         if (!file || !room) {
-            alert("Inserisci sia un file che il codice stanza!");
+            alert("Please provide both a file and the room code!");
             return;
         }
         setLoading(true);
@@ -66,15 +66,15 @@ export default function FileSharing() {
                 setShareUrl(data.fileUrl);
             }
         } catch (error) {
-            console.error("Errore nel caricamento:", error);
-            setMessage("Errore durante il caricamento!");
+            console.error("Error during upload:", error);
+            setMessage("Error during upload!");
         }
         setLoading(false);
     };
 
     const fetchFiles = async () => {
         if (!room) {
-            alert("Inserisci il codice stanza per vedere i file!");
+            alert("Enter the room code to view the files!");
             return;
         }
         try {
@@ -86,8 +86,8 @@ export default function FileSharing() {
             const data = await res.json();
             setFiles(data.files || []);
         } catch (error) {
-            console.error("Errore nel recupero dei file:", error);
-            setMessage("Errore nel recupero dei file!");
+            console.error("Error retrieving files:", error);
+            setMessage("Error retrieving files:!");
         }
     };
 
@@ -112,14 +112,14 @@ export default function FileSharing() {
                 maxWidth: "500px",
                 textAlign: "center"
             }}>
-                <h1 style={{ color: "#ffffff", marginBottom: "20px" }}>Condivisione File</h1>
+                <h1 style={{ color: "#ffffff", marginBottom: "20px" }}>File Sharing</h1>
                 <div style={{ marginBottom: "15px", textAlign: "left" }}>
                     <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-                        Codice Stanza:
+                        Room Code:
                     </label>
                     <input
                         type="text"
-                        placeholder="Inserisci il codice della stanza (es. 4378)"
+                        placeholder="Enter the room code (e.g., 4378)"
                         value={room}
                         onChange={(e) => setRoom(e.target.value)}
                         style={{
@@ -132,7 +132,7 @@ export default function FileSharing() {
                         }}
                     />
                 </div>
-                <p>Carica un file per ottenere un link condivisibile:</p>
+                <p>Upload a file to get a shareable link:</p>
                 <input
                     type="file"
                     onChange={handleFileChange}
@@ -169,13 +169,13 @@ export default function FileSharing() {
                     fontSize: "16px",
                     marginLeft: "10px"
                 }}>
-                    Vedi file della stanza
+                    View room files
                 </button>
                 <ProgressBar loading={loading} />
                 {message && <p style={{ marginTop: "15px" }}>{message}</p>}
                 {shareUrl && (
                     <div style={{ marginTop: "15px" }}>
-                        <p>Link per condividere il file:</p>
+                        <p>Link to share the file:</p>
                         <a
                             href={shareUrl}
                             target="_blank"
@@ -192,7 +192,7 @@ export default function FileSharing() {
                 )}
                 {files.length > 0 && (
                     <div style={{ marginTop: "15px", textAlign: "left" }}>
-                        <p>File nella stanza:</p>
+                        <p>Files in the room:</p>
                         <ul style={{ listStyle: "none", padding: 0 }}>
                             {files.map((f, idx) => (
                                 <li key={idx}>
