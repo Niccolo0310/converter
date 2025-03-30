@@ -1,37 +1,35 @@
-import { writeFile, mkdir, readFile, unlink } from "fs/promises";
+import { writeFile, mkdir, readFile, unlink, readdir } from "fs/promises";
 import path from "path";
 import { NextResponse } from "next/server";
 
-const sanitizeFileName = (name) => {
-    return name.replace(/[^a-zA-Z0-9.]/g, '_');
-};
+const sanitizeFileName = (name) => name.replace(/[^a-zA-Z0-9.]/g, '_');
+const baseUploadDir = path.join("/tmp", "uploads", "shared");
 
-const uploadDir = path.join("/tmp", "uploads", "shared");
-
-// POST: Upload file
+// POST: Carica file nella stanza
 export async function POST(request) {
     try {
         const formData = await request.formData();
         const file = formData.get("file");
+        const room = formData.get("room");
 
-        if (!file) {
-            return NextResponse.json({ message: "Nessun file caricato." }, { status: 400 });
+        if (!file || !room) {
+            return NextResponse.json({ message: "Mancano file o numero stanza." }, { status: 400 });
         }
 
-        const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-
-        await mkdir(uploadDir, { recursive: true });
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const roomDir = path.join(baseUploadDir, room);
+        await mkdir(roomDir, { recursive: true });
 
         const sanitizedFileName = sanitizeFileName(file.name);
         const uniqueName = `${Date.now()}-${sanitizedFileName}`;
-        const filePath = path.join(uploadDir, uniqueName);
+        const filePath = path.join(roomDir, uniqueName);
 
         await writeFile(filePath, buffer);
 
-        const fileUrl = `/api/share?file=${uniqueName}`;
+        // Costruisci l'URL includendo il numero stanza
+        const fileUrl = `/api/share?room=${room}&file=${uniqueName}`;
 
-        // Pianifica cancellazione dopo 3 ore (10800000 ms)
+        // Pianifica la cancellazione automatica dopo 3 ore (3 * 60 * 60 * 1000 ms)
         setTimeout(async () => {
             try {
                 await unlink(filePath);
@@ -41,41 +39,52 @@ export async function POST(request) {
             }
         }, 3 * 60 * 60 * 1000);
 
-        return NextResponse.json({
-            message: "File condiviso con successo!",
-            fileUrl
-        });
-
+        return NextResponse.json({ message: "File caricato!", fileUrl });
     } catch (error) {
-        console.error("Errore nella POST:", error);
-        return NextResponse.json({ message: "Errore interno caricando il file." }, { status: 500 });
+        console.error("Errore nella POST /api/share:", error);
+        return NextResponse.json({ message: "Errore caricando il file." }, { status: 500 });
     }
 }
 
-// GET: Download file
+// GET: Scarica il file dalla stanza
 export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const fileParam = searchParams.get("file");
+    const roomParam = searchParams.get("room");
 
-    if (!fileParam) {
-        return NextResponse.json({ error: "File non specificato." }, { status: 400 });
+    if (!fileParam || !roomParam) {
+        return NextResponse.json({ error: "Parametri mancanti." }, { status: 400 });
     }
 
-    const filePath = path.join(uploadDir, fileParam);
+    const filePath = path.join(baseUploadDir, roomParam, fileParam);
 
     try {
         const buffer = await readFile(filePath);
-
         return new NextResponse(buffer, {
             status: 200,
             headers: {
                 "Content-Type": "application/octet-stream",
-                "Content-Disposition": `attachment; filename="${fileParam}"`
+                "Content-Disposition": `attachment; filename="${fileParam}"`,
             },
         });
-
     } catch (error) {
-        console.error("Errore nella GET:", error);
+        console.error("Errore nella GET /api/share:", error);
         return NextResponse.json({ error: "File non trovato o già eliminato." }, { status: 404 });
+    }
+}
+
+// PUT: Elenca i file presenti nella stanza
+export async function PUT(request) {
+    try {
+        const { room } = await request.json();
+        if (!room) {
+            return NextResponse.json({ error: "Numero stanza mancante." }, { status: 400 });
+        }
+        const roomDir = path.join(baseUploadDir, room);
+        const files = await readdir(roomDir);
+        return NextResponse.json({ files });
+    } catch (error) {
+        console.error("Errore nel PUT /api/share:", error);
+        return NextResponse.json({ files: [] });
     }
 }

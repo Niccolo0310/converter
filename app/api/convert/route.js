@@ -27,7 +27,6 @@ export async function POST(req) {
         }
 
         // Mappa dei possibili endpoint Cloudmersive per la conversione
-        // Aggiungi o modifica le conversioni secondo le tue esigenze
         const conversionMap = {
             pdf: {
                 docx: "https://api.cloudmersive.com/convert/pdf/to/docx",
@@ -38,7 +37,7 @@ export async function POST(req) {
             docx: {
                 pdf: "https://api.cloudmersive.com/convert/docx/to/pdf",
             },
-            // Puoi aggiungere ulteriori conversioni se necessario
+            // Aggiungi ulteriori conversioni se necessario
         };
 
         if (!conversionMap[inputExt] || !conversionMap[inputExt][targetFormat]) {

@@ -92,7 +92,7 @@ export default function Home() {
                     color: #fff;
                     padding: 10px 16px;
                     border: none;
-                    border-radius: 0; /* Square button */
+                    border-radius: 0;
                     text-decoration: none;
                     font-weight: 500;
                     text-align: center;
@@ -105,6 +105,4 @@ export default function Home() {
             `}</style>
         </div>
     );
-
 }
-
