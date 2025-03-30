@@ -38,7 +38,7 @@ export async function POST(req) {
             docx: {
                 pdf: "https://api.cloudmersive.com/convert/docx/to/pdf",
             },
-            // Aggiungi ulteriori conversioni se necessario
+            // Puoi aggiungere ulteriori conversioni se necessario
         };
 
         if (!conversionMap[inputExt] || !conversionMap[inputExt][targetFormat]) {
@@ -84,10 +84,7 @@ export async function POST(req) {
         });
     } catch (error) {
         console.error("Error in /api/convert route:", error);
-        return NextResponse.json(
-            { message: "Unexpected server error" },
-            { status: 500 }
-        );
+        return NextResponse.json({ message: "Unexpected server error" }, { status: 500 });
     }
 }
 
