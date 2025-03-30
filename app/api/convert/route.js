@@ -16,6 +16,10 @@ export async function POST(req) {
         const fileName = file.name;
         const inputExt = fileName.split('.').pop().toLowerCase();
 
+        console.log("File received:", fileName);
+        console.log("Input extension:", inputExt);
+        console.log("Target format:", targetFormat);
+
         // Se l'input ha già il formato target, restituisci il file senza conversione
         if (inputExt === targetFormat) {
             return new NextResponse(buffer, {
@@ -41,6 +45,7 @@ export async function POST(req) {
         };
 
         if (!conversionMap[inputExt] || !conversionMap[inputExt][targetFormat]) {
+            console.log("Conversion not supported for", inputExt, "->", targetFormat);
             return NextResponse.json(
                 { message: "Conversion not supported for these formats" },
                 { status: 400 }
@@ -48,7 +53,10 @@ export async function POST(req) {
         }
 
         const endpoint = conversionMap[inputExt][targetFormat];
+        console.log("Conversion endpoint:", endpoint);
+
         const apiKey = process.env.CLOUDMERSIVE_API_KEY;
+        console.log("Cloudmersive API Key:", apiKey ? "Present" : "Missing");
         if (!apiKey) {
             return NextResponse.json({ message: "API key not configured" }, { status: 500 });
         }
@@ -65,6 +73,7 @@ export async function POST(req) {
 
         if (!response.ok) {
             const errorText = await response.text();
+            console.error("Cloudmersive error response:", errorText);
             return NextResponse.json(
                 { message: "Conversion error: " + errorText },
                 { status: 500 }
