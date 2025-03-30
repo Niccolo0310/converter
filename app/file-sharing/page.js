@@ -156,7 +156,7 @@ export default function FileSharing() {
                     marginTop: "15px",
                     fontSize: "16px"
                 }}>
-                    Carica e Condividi
+                    Upload & Share
                 </button>
                 <button onClick={fetchFiles} style={{
                     backgroundColor: "#7289da",
