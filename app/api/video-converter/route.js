@@ -90,9 +90,9 @@ export async function POST(req) {
         }, 5 * 60 * 1000);
 
         // Sanitize title to create a safe file name.
-        // If title is "unknown", fallback to "converted"
+        // Allow letters, numbers, spaces, hyphens, parentheses and underscores.
         const safeTitle = (title && title !== "unknown")
-            ? title.replace(/[^a-zA-Z0-9-_]/g, '_')
+            ? title.replace(/[^a-zA-Z0-9\s\-\(\)_]/g, '_')
             : "converted";
         const finalFileName = `${safeTitle}.mp3`;
 
