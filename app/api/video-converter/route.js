@@ -5,7 +5,7 @@ import { readFile, unlink } from "fs/promises";
 
 export async function POST(req) {
     try {
-        // Ricevi dal body l'URL del video (assicurati che sia il tuo video)
+        // Ricevi l'URL del video dal body (assicurati che il video sia di tua proprietà)
         const { videoUrl } = await req.json();
         if (!videoUrl) {
             return NextResponse.json({ message: "Video URL is required" }, { status: 400 });
@@ -55,7 +55,7 @@ export async function POST(req) {
             } catch (err) {
                 console.error("Error deleting temporary file:", err);
             }
-        }, 5 * 60 * 1000); // 5 minuti
+        }, 5 * 60 * 1000); // 5 minutes
 
         return new NextResponse(fileBuffer, {
             headers: {
