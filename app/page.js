@@ -6,6 +6,7 @@ export default function Home() {
         <div className="container">
             <h1 className="title">Main Menu</h1>
             <div className="cardRow">
+                {/* 1) File Converter */}
                 <div className="card">
                     <h2 className="cardTitle">File Converter</h2>
                     <p className="cardDescription">
@@ -16,6 +17,7 @@ export default function Home() {
                     </Link>
                 </div>
 
+                {/* 2) Audio Converter */}
                 <div className="card">
                     <h2 className="cardTitle">Audio Converter</h2>
                     <p className="cardDescription">
@@ -26,6 +28,7 @@ export default function Home() {
                     </Link>
                 </div>
 
+                {/* 3) File Sharing */}
                 <div className="card">
                     <h2 className="cardTitle">File Sharing</h2>
                     <p className="cardDescription">
@@ -36,12 +39,24 @@ export default function Home() {
                     </Link>
                 </div>
 
+                {/* 4) Video Converter (MP3) */}
                 <div className="card">
                     <h2 className="cardTitle">Video Converter</h2>
                     <p className="cardDescription">
                         Extract audio from your videos and convert them to MP3 format.
                     </p>
                     <Link href="/video-converter" className="btn">
+                        Go
+                    </Link>
+                </div>
+
+                {/* 5) Video to MP4 (New) */}
+                <div className="card">
+                    <h2 className="cardTitle">Video to MP4</h2>
+                    <p className="cardDescription">
+                        Convert your video files to MP4 format.
+                    </p>
+                    <Link href="/video-to-mp4" className="btn">
                         Go
                     </Link>
                 </div>
