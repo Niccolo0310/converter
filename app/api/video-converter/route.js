@@ -21,7 +21,7 @@ export async function POST(req) {
         const metaProcess = spawn(ytDlpPath, [
             "--dump-json",
             "--no-playlist",
-            videoUrl
+            videoUrl,
         ]);
 
         let metaData = "";
@@ -45,17 +45,16 @@ export async function POST(req) {
         // Parse JSON metadata to get the video title
         const videoInfo = JSON.parse(metaData);
         const title = videoInfo.title || "unknown";
-
         console.log("Video title:", title);
 
-        // Spawn yt-dlp to extract audio as MP3
         console.log("Starting audio extraction...");
+        // Spawn yt-dlp to extract audio as MP3
         const ytDlp = spawn(ytDlpPath, [
             "--no-playlist",
             "-x",
             "--audio-format", "mp3",
             "-o", outputPath,
-            videoUrl
+            videoUrl,
         ]);
 
         let errorData = "";
@@ -90,15 +89,18 @@ export async function POST(req) {
             }
         }, 5 * 60 * 1000);
 
-        // Sanitize title to create a safe file name
-        const safeTitle = title.replace(/[^a-zA-Z0-9-_]/g, '_');
+        // Sanitize title to create a safe file name.
+        // If title is "unknown", fallback to "converted"
+        const safeTitle = (title && title !== "unknown")
+            ? title.replace(/[^a-zA-Z0-9-_]/g, '_')
+            : "converted";
         const finalFileName = `${safeTitle}.mp3`;
 
         return new NextResponse(fileBuffer, {
             headers: {
                 "Content-Type": "audio/mpeg",
-                "Content-Disposition": `attachment; filename="${finalFileName}"`
-            }
+                "Content-Disposition": `attachment; filename="${finalFileName}"`,
+            },
         });
     } catch (error) {
         console.error("Error in /api/video-converter route:", error);
