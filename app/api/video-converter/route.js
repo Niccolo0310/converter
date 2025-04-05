@@ -102,7 +102,7 @@ export async function POST(req) {
         return new NextResponse(fileBuffer, {
             headers: {
                 "Content-Type": "audio/mpeg",
-                "Content-Disposition": `attachment; filename="${finalFileName}"`,
+                "Content-Disposition": `attachment; filename="${finalFileName}"; filename*=UTF-8''${encodeURIComponent(finalFileName)}`,
             },
         });
     } catch (error) {
