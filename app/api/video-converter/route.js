@@ -11,9 +11,9 @@ export async function POST(req) {
             return NextResponse.json({ message: "Video URL is required" }, { status: 400 });
         }
 
-        // Define output file parameters
-        const outputFileName = `audio-${Date.now()}.mp3`;
-        const outputPath = path.join("/tmp", outputFileName);
+        // Define a temporary output file name for the extracted audio
+        const tempFileName = `audio-${Date.now()}.mp3`;
+        const outputPath = path.join("/tmp", tempFileName);
         const ytDlpPath = "/opt/homebrew/bin/yt-dlp";
 
         console.log("Fetching video metadata...");
@@ -42,16 +42,14 @@ export async function POST(req) {
             });
         });
 
-        // Parse the metadata JSON
+        // Parse JSON metadata to get the video title
         const videoInfo = JSON.parse(metaData);
         const title = videoInfo.title || "unknown";
-        const uploader = videoInfo.uploader || "unknown";
 
         console.log("Video title:", title);
-        console.log("Uploader:", uploader);
 
-        console.log("Starting audio extraction...");
         // Spawn yt-dlp to extract audio as MP3
+        console.log("Starting audio extraction...");
         const ytDlp = spawn(ytDlpPath, [
             "--no-playlist",
             "-x",
@@ -82,20 +80,19 @@ export async function POST(req) {
 
         const fileBuffer = await readFile(outputPath);
 
-        // Schedule automatic deletion after 5 minutes
+        // Schedule automatic deletion of the temporary file after 5 minutes
         setTimeout(async () => {
             try {
                 await unlink(outputPath);
-                console.log("Temporary file deleted:", outputPath);
+                console.log("Temporary audio file deleted:", outputPath);
             } catch (err) {
                 console.error("Error deleting temporary file:", err);
             }
         }, 5 * 60 * 1000);
 
-        // Sanitize title and uploader to build a safe filename
+        // Sanitize title to create a safe file name
         const safeTitle = title.replace(/[^a-zA-Z0-9-_]/g, '_');
-        const safeUploader = uploader.replace(/[^a-zA-Z0-9-_]/g, '_');
-        const finalFileName = `${safeTitle}-${safeUploader}-${outputFileName}`;
+        const finalFileName = `${safeTitle}.mp3`;
 
         return new NextResponse(fileBuffer, {
             headers: {
