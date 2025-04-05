@@ -32,9 +32,16 @@ const progressContainerStyle = {
     height: "8px",
 };
 
+const linkStyle = {
+    color: "#7289da",
+    textDecoration: "none",
+    fontWeight: "bold",
+};
+
 export default function VideoConverter() {
     const [videoUrl, setVideoUrl] = useState("");
     const [message, setMessage] = useState("");
+    const [downloadUrl, setDownloadUrl] = useState("");
     const [loading, setLoading] = useState(false);
 
     const handleConvert = async () => {
@@ -44,6 +51,7 @@ export default function VideoConverter() {
         }
         setLoading(true);
         setMessage("");
+        setDownloadUrl("");
         try {
             const res = await fetch("/api/video-converter", {
                 method: "POST",
@@ -56,12 +64,8 @@ export default function VideoConverter() {
             } else {
                 const blob = await res.blob();
                 const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = "converted.mp3";
-                a.click();
-                URL.revokeObjectURL(url);
-                setMessage("Conversion complete!");
+                setDownloadUrl(url);
+                setMessage("Conversion complete! Click the link below to download the file.");
             }
         } catch (error) {
             console.error(error);
@@ -120,6 +124,19 @@ export default function VideoConverter() {
                 </button>
                 <ProgressBar loading={loading} />
                 {message && <p style={{ marginTop: "15px" }}>{message}</p>}
+                {downloadUrl && (
+                    <div style={{ marginTop: "15px" }}>
+                        <a
+                            href={downloadUrl}
+                            download="converted.mp3"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={linkStyle}
+                        >
+                            Download converted MP3
+                        </a>
+                    </div>
+                )}
             </div>
         </div>
     );
