@@ -7,17 +7,17 @@ function ProgressBar({ loading }) {
             <div style={progressContainerStyle}>
                 <div className="progress-bar"></div>
                 <style jsx>{`
-          @keyframes progressAnimation {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-          }
-          .progress-bar {
-            width: 50%;
-            height: 8px;
-            background-color: #7289da;
-            animation: progressAnimation 2s linear infinite;
-          }
-        `}</style>
+                    @keyframes progressAnimation {
+                        0% { transform: translateX(-100%); }
+                        100% { transform: translateX(100%); }
+                    }
+                    .progress-bar {
+                        width: 50%;
+                        height: 8px;
+                        background-color: #7289da;
+                        animation: progressAnimation 2s linear infinite;
+                    }
+                `}</style>
             </div>
         )
     );

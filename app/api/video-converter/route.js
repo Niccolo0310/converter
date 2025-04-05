@@ -1,23 +1,27 @@
 import { NextResponse } from "next/server";
 import { spawn } from "child_process";
 import path from "path";
-import { unlink, readFile } from "fs/promises";
+import { readFile, unlink } from "fs/promises";
 
 export async function POST(req) {
     try {
-        // Ricevi dal body l'URL del video (assicurati che il video sia di tua proprietà)
+        // Ricevi dal body l'URL del video (assicurati che sia il tuo video)
         const { videoUrl } = await req.json();
         if (!videoUrl) {
             return NextResponse.json({ message: "Video URL is required" }, { status: 400 });
         }
 
-        // Imposta un nome file univoco e il percorso di output nella cartella temporanea
+        // Definisci un nome file unico e il percorso di output nella cartella temporanea
         const outputFileName = `audio-${Date.now()}.mp3`;
         const outputPath = path.join("/tmp", outputFileName);
 
+        // Usa il percorso completo per yt-dlp
+        const ytDlpPath = "/opt/homebrew/bin/yt-dlp";
+
         // Esegui yt-dlp per estrarre l'audio in formato mp3
-        const ytDlp = spawn("yt-dlp", [
-            "-x", "--audio-format", "mp3",
+        const ytDlp = spawn(ytDlpPath, [
+            "-x",
+            "--audio-format", "mp3",
             "-o", outputPath,
             videoUrl
         ]);
@@ -51,7 +55,7 @@ export async function POST(req) {
             } catch (err) {
                 console.error("Error deleting temporary file:", err);
             }
-        }, 5 * 60 * 1000); // 5 minutes
+        }, 5 * 60 * 1000); // 5 minuti
 
         return new NextResponse(fileBuffer, {
             headers: {
