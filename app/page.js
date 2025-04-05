@@ -35,6 +35,16 @@ export default function Home() {
                         Go
                     </Link>
                 </div>
+
+                <div className="card">
+                    <h2 className="cardTitle">Video Converter</h2>
+                    <p className="cardDescription">
+                        Extract audio from your videos and convert them to MP3 format.
+                    </p>
+                    <Link href="/video-converter" className="btn">
+                        Go
+                    </Link>
+                </div>
             </div>
 
             <style jsx>{`

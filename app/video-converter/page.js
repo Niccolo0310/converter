@@ -44,6 +44,9 @@ export default function VideoConverter() {
     const [downloadUrl, setDownloadUrl] = useState("");
     const [loading, setLoading] = useState(false);
 
+    // Nuovo stato per gestire il nome desiderato del file
+    const [desiredFileName, setDesiredFileName] = useState("");
+
     const handleConvert = async () => {
         if (!videoUrl) {
             alert("Please enter a video URL!");
@@ -52,19 +55,24 @@ export default function VideoConverter() {
         setLoading(true);
         setMessage("");
         setDownloadUrl("");
+
         try {
+            // Chiamata API al tuo endpoint /api/video-converter
             const res = await fetch("/api/video-converter", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ videoUrl }),
             });
+
             if (!res.ok) {
                 const err = await res.json();
                 setMessage("Conversion error: " + err.message);
             } else {
+                // Riceviamo il file come blob e generiamo un URL temporaneo
                 const blob = await res.blob();
                 const url = URL.createObjectURL(blob);
                 setDownloadUrl(url);
+
                 setMessage("Conversion complete! Click the link below to download the file.");
             }
         } catch (error) {
@@ -95,6 +103,8 @@ export default function VideoConverter() {
                 textAlign: "center"
             }}>
                 <h1 style={{ marginBottom: "20px", color: "#ffffff" }}>Video to MP3 Converter</h1>
+
+                {/* Input per l'URL del video */}
                 <input
                     type="text"
                     placeholder="Enter your video URL"
@@ -110,6 +120,24 @@ export default function VideoConverter() {
                         color: "#dcddde"
                     }}
                 />
+
+                {/* Input per il nome desiderato del file (senza estensione) */}
+                <input
+                    type="text"
+                    placeholder="Desired file name (optional)"
+                    value={desiredFileName}
+                    onChange={(e) => setDesiredFileName(e.target.value)}
+                    style={{
+                        width: "100%",
+                        padding: "8px",
+                        marginBottom: "15px",
+                        borderRadius: "4px",
+                        border: "none",
+                        backgroundColor: "#202225",
+                        color: "#dcddde"
+                    }}
+                />
+
                 <button onClick={handleConvert} style={{
                     backgroundColor: "#7289da",
                     color: "#ffffff",
@@ -122,13 +150,17 @@ export default function VideoConverter() {
                 }}>
                     Convert Video to MP3
                 </button>
+
                 <ProgressBar loading={loading} />
+
                 {message && <p style={{ marginTop: "15px" }}>{message}</p>}
+
                 {downloadUrl && (
                     <div style={{ marginTop: "15px" }}>
                         <a
                             href={downloadUrl}
-                            download="converted.mp3"
+                            // Se l'utente non inserisce un nome, usiamo "converted.mp3"
+                            download={desiredFileName ? `${desiredFileName}.mp3` : "converted.mp3"}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={linkStyle}
